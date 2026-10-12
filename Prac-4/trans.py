@@ -16,10 +16,6 @@ def transposition(text, columns, rowWise, decrypt=False):
 
     length = len(text)
 
-    if columns <= 0:
-        print("Columns must be positive!")
-        return text
-
     # Handle empty text
     if length == 0:
         return text
