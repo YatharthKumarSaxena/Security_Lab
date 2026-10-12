@@ -1,13 +1,20 @@
-
 # CONFIGURATION
-
 
 charset = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
 
 
+# GET FILLER
+
+def get_filler(ch, charset):
+
+    for filler in charset:
+        if filler != ch:
+            return filler
+
+    return ch
+
 
 # CREATE PLAYFAIR MATRIX
-
 
 def create_matrix(key, charset):
 
@@ -39,11 +46,9 @@ def create_matrix(key, charset):
     return matrix, position, n
 
 
-
 # PREPARE PLAINTEXT
 
-
-def prepare_text(text):
+def prepare_text(text, charset):
 
     prepared = []
     filler_positions = []
@@ -54,27 +59,14 @@ def prepare_text(text):
 
         a = text[i]
 
-        if i + 1 >= len(text):
+        if i + 1 >= len(text) or text[i] == text[i + 1]:
 
             prepared.append(a)
 
-            # Record the filler position
+            filler = get_filler(a, charset)
+
             filler_positions.append(len(prepared))
-
-            # Temporary filler marker
-            prepared.append('#')
-
-            i += 1
-
-        elif text[i] == text[i + 1]:
-
-            prepared.append(a)
-
-            # Record the filler position
-            filler_positions.append(len(prepared))
-
-            # Temporary filler marker
-            prepared.append('#')
+            prepared.append(filler)
 
             i += 1
 
@@ -88,9 +80,7 @@ def prepare_text(text):
     return ''.join(prepared), filler_positions
 
 
-
 # TRANSFORM PAIR
-
 
 def transform_pair(a, b, matrix, position, n, decrypt=False):
 
@@ -121,13 +111,11 @@ def transform_pair(a, b, matrix, position, n, decrypt=False):
     return matrix[r1][c1] + matrix[r2][c2]
 
 
-
 # ENCRYPTION
-
 
 def encrypt(text, matrix, position, n, charset):
 
-    prepared, filler_positions = prepare_text(text)
+    prepared, filler_positions = prepare_text(text, charset)
 
     result = ''
 
@@ -135,13 +123,6 @@ def encrypt(text, matrix, position, n, charset):
 
         a = prepared[i]
         b = prepared[i + 1]
-
-        # Map temporary '#' filler to a valid matrix character
-        if a == '#':
-            a = 'X'
-
-        if b == '#':
-            b = 'X'
 
         result += transform_pair(
             a,
@@ -154,9 +135,7 @@ def encrypt(text, matrix, position, n, charset):
     return result, filler_positions
 
 
-
 # DECRYPTION
-
 
 def decrypt(ciphertext, matrix, position, n, charset,
             filler_positions):
@@ -178,7 +157,7 @@ def decrypt(ciphertext, matrix, position, n, charset,
             decrypt=True
         )
 
-    # Restore filler positions using stored metadata
+    # Remove inserted filler characters
     filler_positions = set(filler_positions)
 
     result = ''.join(
@@ -189,9 +168,7 @@ def decrypt(ciphertext, matrix, position, n, charset,
     return result
 
 
-
 # MAIN PROGRAM
-
 
 while True:
 
@@ -208,9 +185,7 @@ while True:
 
     elif choice == '1':
 
-        
         # VALIDATE CHARACTER SET
-        
 
         if len(set(charset)) != len(charset):
             print("Error: Character set must contain unique characters!")
@@ -222,32 +197,19 @@ while True:
             print("Error: Character set length must be a perfect square!")
             continue
 
-        if '#' in charset:
-            print("Error: '#' is reserved for filler handling!")
-            continue
-
-        if 'X' not in charset:
-            print("Error: 'X' is required as the filler replacement!")
-            continue
-
-        
         # CREATE MATRIX
-        
 
         key = input("Enter encryption key: ")
 
         matrix, position, n = create_matrix(key, charset)
 
         print("\nMatrix Size:", n, "x", n)
-
         print("\nPlayfair Matrix:")
 
         for row in matrix:
             print(' '.join(row))
 
-        
         # VALIDATE PLAINTEXT
-        
 
         plaintext = input("\nEnter plaintext: ").upper()
 
@@ -263,9 +225,7 @@ while True:
         if not valid:
             continue
 
-        
         # ENCRYPT
-        
 
         ciphertext, filler_positions = encrypt(
             plaintext,
@@ -277,9 +237,7 @@ while True:
 
         print("\nEncrypted Text:", ciphertext)
 
-        
         # DECRYPT
-        
 
         answer = input(
             "Do you want to decrypt? (yes/no): "
@@ -287,7 +245,6 @@ while True:
 
         if answer in ('yes', 'y'):
 
-            # Validate ciphertext
             valid = True
 
             for ch in ciphertext:
